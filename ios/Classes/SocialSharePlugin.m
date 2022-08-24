@@ -4,8 +4,9 @@
 //
 
 #import "SocialSharePlugin.h"
-@import AVFoundation
 #include <objc/runtime.h>
+
+@import AVFoundation
 
 @implementation SocialSharePlugin
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
