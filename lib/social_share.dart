@@ -9,25 +9,35 @@ class SocialShare {
   static const MethodChannel _channel = const MethodChannel('social_share');
 
   static Future<String?> shareInstagramStory(
-      String imagePath, {
+      {
+        String? stickerPath,
         String? backgroundTopColor,
         String? backgroundBottomColor,
         String? attributionURL,
         String? backgroundImagePath,
+        String? backgroundVideoPath
       }) async {
     Map<String, dynamic> args;
     if (Platform.isIOS) {
-      if (backgroundImagePath == null) {
+      if (backgroundImagePath != null) {
         args = <String, dynamic>{
-          "stickerImage": imagePath,
+          "stickerImage": stickerPath,
+          "backgroundImage": backgroundImagePath,
+          "backgroundTopColor": backgroundTopColor,
+          "backgroundBottomColor": backgroundBottomColor,
+          "attributionURL": attributionURL
+        };
+      }else if(backgroundImagePath != null){
+        args = <String, dynamic>{
+          "stickerImage": stickerPath,
+          "backgroundVideo": backgroundVideoPath,
           "backgroundTopColor": backgroundTopColor,
           "backgroundBottomColor": backgroundBottomColor,
           "attributionURL": attributionURL
         };
       } else {
         args = <String, dynamic>{
-          "stickerImage": imagePath,
-          "backgroundImage": backgroundImagePath,
+          "stickerImage": stickerPath,
           "backgroundTopColor": backgroundTopColor,
           "backgroundBottomColor": backgroundBottomColor,
           "attributionURL": attributionURL
@@ -36,14 +46,17 @@ class SocialShare {
     } else {
       final tempDir = await getTemporaryDirectory();
 
-      File file = File(imagePath);
-      Uint8List bytes = file.readAsBytesSync();
-      var stickerData = bytes.buffer.asUint8List();
-      String stickerAssetName = 'stickerAsset.png';
-      final Uint8List stickerAssetAsList = stickerData;
-      final stickerAssetPath = '${tempDir.path}/$stickerAssetName';
-      file = await File(stickerAssetPath).create();
-      file.writeAsBytesSync(stickerAssetAsList);
+      String? stickerAssetName;
+      if(stickerPath != null){
+        File file = File(stickerPath);
+        Uint8List bytes = file.readAsBytesSync();
+        var stickerData = bytes.buffer.asUint8List();
+        String stickerAssetName = 'stickerAsset.png';
+        final Uint8List stickerAssetAsList = stickerData;
+        final stickerAssetPath = '${tempDir.path}/$stickerAssetName';
+        file = await File(stickerAssetPath).create();
+        file.writeAsBytesSync(stickerAssetAsList);
+      }
 
       String? backgroundAssetName;
       if (backgroundImagePath != null) {
