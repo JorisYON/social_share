@@ -19,7 +19,6 @@
         NSString *stickerImage = call.arguments[@"stickerImage"];
         NSString *backgroundTopColor = call.arguments[@"backgroundTopColor"];
         NSString *backgroundBottomColor = call.arguments[@"backgroundBottomColor"];
-        NSString *attributionURL = call.arguments[@"attributionURL"];
         NSString *backgroundImage = call.arguments[@"backgroundImage"];
         NSString *backgroundVideo = call.arguments[@"backgroundVideo"];
         //getting image from file
@@ -37,11 +36,10 @@
            //if instagram is installed and the url can be opened
            if ( [ backgroundImage  length] == 0 ) {
               //If you dont have a background image
-             // Assign background image asset and attribution link URL to pasteboard
+             // Assign background image asset
              NSArray *pasteboardItems = @[@{@"com.instagram.sharedSticker.stickerImage" : imgShare,
                                             @"com.instagram.sharedSticker.backgroundTopColor" : backgroundTopColor,
-                                            @"com.instagram.sharedSticker.backgroundBottomColor" : backgroundBottomColor,
-                                            @"com.instagram.sharedSticker.contentURL" : attributionURL
+                                            @"com.instagram.sharedSticker.backgroundBottomColor" : backgroundBottomColor
              }];
              if (@available(iOS 10.0, *)) {
              NSDictionary *pasteboardOptions = @{UIPasteboardOptionExpirationDate : [[NSDate date] dateByAddingTimeInterval:60 * 5]};
@@ -100,7 +98,6 @@
         NSString *stickerImage = call.arguments[@"stickerImage"];
         NSString *backgroundTopColor = call.arguments[@"backgroundTopColor"];
         NSString *backgroundBottomColor = call.arguments[@"backgroundBottomColor"];
-        NSString *attributionURL = call.arguments[@"attributionURL"];
         NSString *path = [[NSBundle mainBundle] pathForResource:@"Info" ofType:@"plist"];
         NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:path];
         NSString *appID = [dict objectForKey:@"FacebookAppID"];
@@ -113,11 +110,10 @@
         NSURL *urlScheme = [NSURL URLWithString:@"facebook-stories://share"];
         if ([[UIApplication sharedApplication] canOpenURL:urlScheme]) {
 
-            // Assign background image asset and attribution link URL to pasteboard
+            // Assign background image asset
             NSArray *pasteboardItems = @[@{@"com.facebook.sharedSticker.stickerImage" : imgShare,
                                            @"com.facebook.sharedSticker.backgroundTopColor" : backgroundTopColor,
                                            @"com.facebook.sharedSticker.backgroundBottomColor" : backgroundBottomColor,
-                                           @"com.facebook.sharedSticker.contentURL" : attributionURL,
                                            @"com.facebook.sharedSticker.appID" : appID}];
             if (@available(iOS 10.0, *)) {
             NSDictionary *pasteboardOptions = @{UIPasteboardOptionExpirationDate : [[NSDate date] dateByAddingTimeInterval:60 * 5]};

@@ -13,7 +13,6 @@ class SocialShare {
         String? stickerPath,
         String? backgroundTopColor,
         String? backgroundBottomColor,
-        String? attributionURL,
         String? backgroundImagePath,
         String? backgroundVideoPath
       }) async {
@@ -24,23 +23,20 @@ class SocialShare {
           "stickerImage": stickerPath,
           "backgroundImage": backgroundImagePath,
           "backgroundTopColor": backgroundTopColor,
-          "backgroundBottomColor": backgroundBottomColor,
-          "attributionURL": attributionURL
+          "backgroundBottomColor": backgroundBottomColor
         };
       }else if(backgroundImagePath != null){
         args = <String, dynamic>{
           "stickerImage": stickerPath,
           "backgroundVideo": backgroundVideoPath,
           "backgroundTopColor": backgroundTopColor,
-          "backgroundBottomColor": backgroundBottomColor,
-          "attributionURL": attributionURL
+          "backgroundBottomColor": backgroundBottomColor
         };
       } else {
         args = <String, dynamic>{
           "stickerImage": stickerPath,
           "backgroundTopColor": backgroundTopColor,
-          "backgroundBottomColor": backgroundBottomColor,
-          "attributionURL": attributionURL
+          "backgroundBottomColor": backgroundBottomColor
         };
       }
     } else {
@@ -73,8 +69,7 @@ class SocialShare {
         "stickerImage": stickerAssetName,
         "backgroundImage": backgroundAssetName,
         "backgroundTopColor": backgroundTopColor,
-        "backgroundBottomColor": backgroundBottomColor,
-        "attributionURL": attributionURL,
+        "backgroundBottomColor": backgroundBottomColor
       };
     }
     final String? response = await _channel.invokeMethod(
