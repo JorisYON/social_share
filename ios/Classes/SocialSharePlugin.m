@@ -4,10 +4,8 @@
 //
 
 #import "SocialSharePlugin.h"
+#import <AVFoundation/AVFoundation.h>
 #include <objc/runtime.h>
-
-@import AVFoundation
-
 @implementation SocialSharePlugin
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
   FlutterMethodChannel* channel = [FlutterMethodChannel methodChannelWithName:@"social_share" binaryMessenger:[registrar messenger]];
