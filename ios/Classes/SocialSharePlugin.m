@@ -4,6 +4,7 @@
 //
 
 #import "SocialSharePlugin.h"
+@import AVFoundation
 #include <objc/runtime.h>
 
 @implementation SocialSharePlugin
