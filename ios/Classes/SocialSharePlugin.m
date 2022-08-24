@@ -58,16 +58,16 @@
        } else if ( [ backgroundVideo  length] != 0 ) {
              if ([[UIApplication sharedApplication] canOpenURL:urlScheme]) {
 
-                             UIVideo *videoBackgroundShare = [[UIVideo alloc] initWithContentsOfFile:backgroundImage];
+                             NSData *videoBackgroundShare = [NSData dataWithContentsOfFile:strURL];
 
                              // Assign background and sticker image assets to pasteboard
-                             NSArray *pasteboardItems = @[@{@"com.instagram.sharedSticker.backgroundVideo" : imgBackgroundShare,
+                             NSArray *pasteboardItems = @[@{@"com.instagram.sharedSticker.backgroundVideo" : videoBackgroundShare,
                                                             @"com.instagram.sharedSticker.backgroundTopColor" : backgroundTopColor,
-                                                            @"com.instagram.sharedSticker.backgroundBottomColor" : backgroundBottomColor
+                                                            @"com.instagram.sharedSticker.backgroundBottomColor" : backgroundBottomColor,
                                                             @"com.instagram.sharedSticker.stickerImage" : stickerImage}];
                              NSDictionary *pasteboardOptions = @{UIPasteboardOptionExpirationDate : [[NSDate date] dateByAddingTimeInterval:60 * 5]};
                              // This call is iOS 10+, can use 'setItems' depending on what versions you support
-                             [[UIPasteboard generalPasteboard] setItems:pasteboardItems options:pasteboardOptions];
+                 [[UIPasteboard generalPasteboard] setItems:pasteboardItems options:pasteboardOptions];
 
                              [[UIApplication sharedApplication] openURL:urlScheme options:@{} completionHandler:nil];
                          } else {
@@ -82,7 +82,7 @@
                 // Assign background and sticker image assets to pasteboard
                 NSArray *pasteboardItems = @[@{@"com.instagram.sharedSticker.backgroundImage" : imgBackgroundShare,
                                                @"com.instagram.sharedSticker.backgroundTopColor" : backgroundTopColor,
-                                               @"com.instagram.sharedSticker.backgroundBottomColor" : backgroundBottomColor
+                                               @"com.instagram.sharedSticker.backgroundBottomColor" : backgroundBottomColor,
                                                @"com.instagram.sharedSticker.stickerImage" : stickerImage}];
                 NSDictionary *pasteboardOptions = @{UIPasteboardOptionExpirationDate : [[NSDate date] dateByAddingTimeInterval:60 * 5]};
                 // This call is iOS 10+, can use 'setItems' depending on what versions you support
