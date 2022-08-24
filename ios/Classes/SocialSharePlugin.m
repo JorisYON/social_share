@@ -58,7 +58,7 @@
        } else if ( [ backgroundVideo  length] != 0 ) {
              if ([[UIApplication sharedApplication] canOpenURL:urlScheme]) {
 
-                             NSData *videoBackgroundShare = [NSData dataWithContentsOfFile:strURL];
+                             NSData *videoBackgroundShare = [NSData dataWithContentsOfFile:backgroundVideo];
 
                              // Assign background and sticker image assets to pasteboard
                              NSArray *pasteboardItems = @[@{@"com.instagram.sharedSticker.backgroundVideo" : videoBackgroundShare,
