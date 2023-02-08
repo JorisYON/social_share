@@ -18,12 +18,27 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry.Registrar
 import java.io.File
+import com.facebook.CallbackManager
+import com.facebook.FacebookCallback
+import com.facebook.FacebookException
+import com.facebook.share.Sharer
+import com.facebook.share.model.ShareLinkContent
+import com.facebook.share.model.SharePhoto
+import com.facebook.share.model.SharePhotoContent
+import com.facebook.share.model.ShareVideo
+import com.facebook.share.model.ShareHashtag
+import com.facebook.share.model.ShareVideoContent
+import com.facebook.share.widget.ShareDialog
 
 class SocialSharePlugin:FlutterPlugin, MethodCallHandler, ActivityAware {
     private lateinit var channel: MethodChannel
     private var activity: Activity? = null
     private var activeContext: Context? = null
     private var context: Context? = null
+
+    val INSTAGRAM_REQUEST_CODE = 0xc0c3
+
+    private val callbackManager: CallbackManager = CallbackManager.Factory.create()
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
@@ -34,34 +49,61 @@ class SocialSharePlugin:FlutterPlugin, MethodCallHandler, ActivityAware {
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         activeContext = if (activity != null) activity!!.applicationContext else context!!
 
-        if (call.method == "shareInstagramStory") {
+        if(call.method == "shareFacebookWall"){
+            val image: String? = call.argument("image")
+            val video: String? = call.argument("video")
+            val link: String? = call.argument("link")
+            val hashtag: String? = call.argument("hashtag")
+
+            if(video != null){
+                facebookShareVideo(video, hashtag, result)
+            }else if(image != null){
+                facebookSharePhoto(image, hashtag, result)
+            }else if(link != null){
+                facebookShareLink(link, hashtag, result)
+            }
+
+        }else if (call.method == "shareInstagramWall") {
+            //share on instagram wall
+            val image: String? = call.argument("image")
+            val video: String? = call.argument("video")
+
+            instagramShare("image/*", image, result)
+
+        }else if (call.method == "shareInstagramStory") {
             //share on instagram story
             val stickerImage: String? = call.argument("stickerImage")
             val backgroundImage: String? = call.argument("backgroundImage")
-
+            val backgroundVideo: String? = call.argument("backgroundVideo")
             val backgroundTopColor: String? = call.argument("backgroundTopColor")
             val backgroundBottomColor: String? = call.argument("backgroundBottomColor")
-            val attributionURL: String? = call.argument("attributionURL")
-            val file =  File(activeContext!!.cacheDir,stickerImage)
-            val stickerImageFile = FileProvider.getUriForFile(activeContext!!, activeContext!!.applicationContext.packageName + ".com.shekarmudaliyar.social_share", file)
 
             val intent = Intent("com.instagram.share.ADD_TO_STORY")
-            intent.type = "image/*"
+
+            val sourceApplication = "com.appyesorno.and"
+            intent.putExtra("source_application", sourceApplication);
+
+            if(stickerImage != null){
+                val file =  File(activeContext!!.cacheDir,stickerImage)
+                val stickerImageFile = FileProvider.getUriForFile(activeContext!!, activeContext!!.applicationContext.packageName + ".provider", file)
+                intent.putExtra("interactive_asset_uri", stickerImageFile);
+                activity!!.grantUriPermission(
+                    "com.instagram.android", stickerImageFile, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            }
+            if (backgroundImage!=null) {
+                Log.d("debug", "we has image")
+                val backfile =  File(activeContext!!.cacheDir,backgroundImage)
+                val backgroundImageFile = FileProvider.getUriForFile(activeContext!!, activeContext!!.applicationContext.packageName + ".provider", backfile)
+                intent.setDataAndType(backgroundImageFile, "image/png")
+            }else if(backgroundVideo!=null) {
+                val backfile =  File(activeContext!!.cacheDir,backgroundVideo)
+                val backgroundVideoFile = FileProvider.getUriForFile(activeContext!!, activeContext!!.applicationContext.packageName + ".provider", backfile)
+                intent.setDataAndType(backgroundVideoFile,"video/mp4")
+            }
+            Log.d("", activity!!.toString())
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            intent.putExtra("interactive_asset_uri", stickerImageFile)
-            if (backgroundImage!=null) {
-                //check if background image is also provided
-                val backfile =  File(activeContext!!.cacheDir,backgroundImage)
-                val backgroundImageFile = FileProvider.getUriForFile(activeContext!!, activeContext!!.applicationContext.packageName + ".com.shekarmudaliyar.social_share", backfile)
-                intent.setDataAndType(backgroundImageFile,"image/*")
-            }
-            intent.putExtra("content_url", attributionURL)
-            intent.putExtra("top_background_color", backgroundTopColor)
-            intent.putExtra("bottom_background_color", backgroundBottomColor)
-            Log.d("", activity!!.toString())
             // Instantiate activity and verify it will resolve implicit intent
-            activity!!.grantUriPermission("com.instagram.android", stickerImageFile, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             if (activity!!.packageManager.resolveActivity(intent, 0) != null) {
                 activeContext!!.startActivity(intent)
                 result.success("success")
@@ -71,29 +113,50 @@ class SocialSharePlugin:FlutterPlugin, MethodCallHandler, ActivityAware {
         } else if (call.method == "shareFacebookStory") {
             //share on facebook story
             val stickerImage: String? = call.argument("stickerImage")
+            val backgroundImage: String? = call.argument("backgroundImage")
+            val backgroundVideo: String? = call.argument("backgroundVideo")
             val backgroundTopColor: String? = call.argument("backgroundTopColor")
             val backgroundBottomColor: String? = call.argument("backgroundBottomColor")
-            val attributionURL: String? = call.argument("attributionURL")
             val appId: String? = call.argument("appId")
 
-            val file =  File(activeContext!!.cacheDir,stickerImage)
-            val stickerImageFile = FileProvider.getUriForFile(activeContext!!, activeContext!!.applicationContext.packageName + ".com.shekarmudaliyar.social_share", file)
             val intent = Intent("com.facebook.stories.ADD_TO_STORY")
-            intent.type = "image/*"
+
+            val sourceApplication = "com.appyesorno.and"
+            intent.putExtra("source_application", sourceApplication)
+            intent.putExtra("com.facebook.platform.extra.APPLICATION_ID", appId)
+
+            if(stickerImage != null){
+                Log.d("debug", "we has sticker")
+                val file =  File(activeContext!!.cacheDir,stickerImage)
+                val stickerImageFile = FileProvider.getUriForFile(activeContext!!, activeContext!!.applicationContext.packageName + ".provider", file)
+                intent.putExtra("interactive_asset_uri", stickerImageFile);
+                activity!!.grantUriPermission(
+                    "com.facebook.katana", stickerImageFile, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            }
+
+            if (backgroundImage!=null) {
+                Log.d("debug", "we has image")
+                val backfile =  File(activeContext!!.cacheDir,backgroundImage)
+                val backgroundImageFile = FileProvider.getUriForFile(activeContext!!, activeContext!!.applicationContext.packageName + ".provider", backfile)
+                intent.setDataAndType(backgroundImageFile, "image/png")
+
+            }else if(backgroundVideo!=null) {
+                //check if background image is also provided
+                Log.d("debug", "we has video")
+                val backfile =  File(activeContext!!.cacheDir,backgroundVideo)
+                val backgroundVideoFile = FileProvider.getUriForFile(activeContext!!, activeContext!!.applicationContext.packageName + ".provider", backfile)
+                intent.setDataAndType(backgroundVideoFile,"video/mp4")
+            }
+            Log.d("", activity!!.toString())
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            intent.putExtra("com.facebook.platform.extra.APPLICATION_ID", appId)
-            intent.putExtra("interactive_asset_uri", stickerImageFile)
-            intent.putExtra("content_url", attributionURL)
-            intent.putExtra("top_background_color", backgroundTopColor)
-            intent.putExtra("bottom_background_color", backgroundBottomColor)
-            Log.d("", activity!!.toString())
             // Instantiate activity and verify it will resolve implicit intent
-            activity!!.grantUriPermission("com.facebook.katana", stickerImageFile, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             if (activity!!.packageManager.resolveActivity(intent, 0) != null) {
+                Log.d("debug", "we has launch 1")
                 activeContext!!.startActivity(intent)
                 result.success("success")
             } else {
+                Log.d("debug", "we has fail")
                 result.success("error")
             }
         } else if (call.method == "shareOptions") {
@@ -106,7 +169,7 @@ class SocialSharePlugin:FlutterPlugin, MethodCallHandler, ActivityAware {
             if (image!=null) {
                 //check if  image is also provided
                 val imagefile =  File(activeContext!!.cacheDir,image)
-                val imageFileUri = FileProvider.getUriForFile(activeContext!!, activeContext!!.applicationContext.packageName + ".com.shekarmudaliyar.social_share", imagefile)
+                val imageFileUri = FileProvider.getUriForFile(activeContext!!, activeContext!!.applicationContext.packageName + ".provider", imagefile)
                 intent.type = "image/*"
                 intent.putExtra(Intent.EXTRA_STREAM,imageFileUri)
             } else {
@@ -208,10 +271,124 @@ class SocialSharePlugin:FlutterPlugin, MethodCallHandler, ActivityAware {
             apps["twitter"] = packages.any  { it.packageName.toString().contentEquals("com.twitter.android") }
             apps["whatsapp"] = packages.any  { it.packageName.toString().contentEquals("com.whatsapp") }
             apps["telegram"] = packages.any  { it.packageName.toString().contentEquals("org.telegram.messenger") }
+            apps["tiktok"] = packages.any  { it.packageName.toString().contentEquals("com.zhiliaoapp.musically") }
 
             result.success(apps)
         } else {
             result.notImplemented()
+        }
+    }
+
+    private fun facebookSharePhoto(imagePath: String?, hashtag: String?, @NonNull result: Result){
+        val backfile =  File(activeContext!!.cacheDir,imagePath)
+        val uri = FileProvider.getUriForFile(activeContext!!, activeContext!!.applicationContext.packageName + ".provider", backfile)
+        val photo: SharePhoto = SharePhoto.Builder().setImageUrl(uri).build()
+        val hashtagContent: ShareHashtag = ShareHashtag.Builder()
+                .setHashtag(hashtag)
+                .build()
+        val content: SharePhotoContent = SharePhotoContent.Builder().addPhoto(photo)
+                     .setShareHashtag(hashtagContent).build()
+
+        val shareDialog = ShareDialog(activity)
+        shareDialog.registerCallback(callbackManager, object : FacebookCallback<Sharer.Result?> {
+            override fun onSuccess(resultShare: Sharer.Result?) {
+                result.success("true")
+                Log.d("SocialSharePlugin", "Sharing successfully done.")
+            }
+
+            override fun onCancel() {
+                result.success("false")
+                Log.d("SocialSharePlugin", "Sharing cancelled.")
+            }
+
+            override fun onError(error: FacebookException) {
+                result.success("false")
+                Log.d("SocialSharePlugin", "Sharing error occurred.")
+            }
+        })
+        if (ShareDialog.canShow(SharePhotoContent::class.java)) {
+            shareDialog.show(content)
+        }
+    }
+
+    private fun facebookShareVideo(imagePath: String?, hashtag: String?, @NonNull result: Result){
+        val backfile =  File(activeContext!!.cacheDir,imagePath)
+        val uri = FileProvider.getUriForFile(activeContext!!, activeContext!!.applicationContext.packageName + ".provider", backfile)
+        val video: ShareVideo = ShareVideo.Builder()
+                .setLocalUrl(uri)
+                .build()
+        val hashtagContent: ShareHashtag = ShareHashtag.Builder()
+                .setHashtag(hashtag)
+                .build()
+        val content: ShareVideoContent = ShareVideoContent.Builder()
+                .setVideo(video)
+                .setShareHashtag(hashtagContent)
+                .build()
+
+        val shareDialog = ShareDialog(activity)
+        shareDialog.registerCallback(callbackManager, object : FacebookCallback<Sharer.Result?> {
+            override fun onSuccess(resultShare: Sharer.Result?) {
+                result.success("true")
+            }
+
+            override fun onCancel() {
+                result.success("false")
+                Log.d("SocialSharePlugin", "Sharing cancelled.")
+            }
+
+            override fun onError(error: FacebookException) {
+                result.success("false")
+                Log.d("SocialSharePlugin", "Sharing error occurred.")
+            }
+        })
+        if (ShareDialog.canShow(ShareVideoContent::class.java)) {
+            shareDialog.show(content)
+        }
+    }
+
+    private fun facebookShareLink(link: String?, hashtag: String?, @NonNull result: Result){
+        val hashtagContent: ShareHashtag = ShareHashtag.Builder()
+                .setHashtag(hashtag)
+                .build()
+        val content: ShareLinkContent = ShareLinkContent.Builder()
+                .setContentUrl(Uri.parse(link))
+                .setShareHashtag(hashtagContent)
+                .build()
+
+        val shareDialog = ShareDialog(activity)
+        shareDialog.registerCallback(callbackManager, object : FacebookCallback<Sharer.Result?> {
+            override fun onSuccess(resultShare: Sharer.Result?) {
+                result.success("true")
+                Log.d("SocialSharePlugin", "Sharing successfully done.")
+            }
+
+            override fun onCancel() {
+                result.success("false")
+                Log.d("SocialSharePlugin", "Sharing cancelled.")
+            }
+
+            override fun onError(error: FacebookException) {
+                result.success("false")
+                Log.d("SocialSharePlugin", "Sharing error occurred.")
+            }
+        })
+        if (ShareDialog.canShow(ShareLinkContent::class.java)) {
+            shareDialog.show(content)
+        }
+    }
+
+    private fun instagramShare(type: String?, imagePath: String?, @NonNull result: Result) {
+        val backfile =  File(activeContext!!.cacheDir,imagePath)
+        val uri = FileProvider.getUriForFile(activeContext!!, activeContext!!.applicationContext.packageName + ".provider", backfile)
+        val shareIntent = Intent()
+        shareIntent.setAction(Intent.ACTION_SEND)
+        shareIntent.setPackage("com.instagram.android")
+        try {
+            shareIntent.putExtra(Intent.EXTRA_STREAM,
+                    Uri.parse("file://$uri"))
+        } catch (e: Exception) {
+            // TODO Auto-generated catch block
+            e.printStackTrace()
         }
     }
 

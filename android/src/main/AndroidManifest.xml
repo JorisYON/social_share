@@ -2,4 +2,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.shekarmudaliyar.social_share">
     <meta-data android:name="flutterEmbedding" android:value="2"/>
+
+    <queries><provider android:authorities="com.facebook.katana.provider.PlatformProvider" /></queries>
+    <queries> <package android:name="com.instagram.android" /> </queries>
+    <queries> <package android:name="org.telegram.messenger" /> </queries>
+
 </manifest>

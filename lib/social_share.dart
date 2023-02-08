@@ -9,28 +9,22 @@ class SocialShare {
   static const MethodChannel _channel = const MethodChannel('social_share');
 
   static Future<String?> shareInstagramStory(
-      {
-        String? stickerPath,
-        String? backgroundTopColor,
-        String? backgroundBottomColor,
-        String? backgroundImagePath,
-        String? backgroundVideoPath
-      }) async {
+      {String? stickerPath,
+      String? backgroundTopColor,
+      String? backgroundBottomColor,
+      String? backgroundImagePath,
+      String? backgroundVideoPath}) async {
     Map<String, dynamic> args;
     if (Platform.isIOS) {
       if (backgroundImagePath != null) {
         args = <String, dynamic>{
           "stickerImage": stickerPath,
           "backgroundImage": backgroundImagePath,
-          "backgroundTopColor": backgroundTopColor,
-          "backgroundBottomColor": backgroundBottomColor
         };
-      }else if(backgroundImagePath != null){
+      } else if (backgroundVideoPath != null) {
         args = <String, dynamic>{
           "stickerImage": stickerPath,
           "backgroundVideo": backgroundVideoPath,
-          "backgroundTopColor": backgroundTopColor,
-          "backgroundBottomColor": backgroundBottomColor
         };
       } else {
         args = <String, dynamic>{
@@ -43,31 +37,43 @@ class SocialShare {
       final tempDir = await getTemporaryDirectory();
 
       String? stickerAssetName;
-      if(stickerPath != null){
+      if (stickerPath != null) {
         File file = File(stickerPath);
         Uint8List bytes = file.readAsBytesSync();
         var stickerData = bytes.buffer.asUint8List();
-        String stickerAssetName = 'stickerAsset.png';
+        stickerAssetName = 'stickerAsset.png';
         final Uint8List stickerAssetAsList = stickerData;
         final stickerAssetPath = '${tempDir.path}/$stickerAssetName';
         file = await File(stickerAssetPath).create();
         file.writeAsBytesSync(stickerAssetAsList);
       }
 
-      String? backgroundAssetName;
+      String? backgroundImageAssetName;
       if (backgroundImagePath != null) {
         File backgroundImage = File(backgroundImagePath);
         Uint8List backgroundImageData = backgroundImage.readAsBytesSync();
-        backgroundAssetName = 'backgroundAsset.jpg';
+        backgroundImageAssetName = 'backgroundImageAsset.png';
         final Uint8List backgroundAssetAsList = backgroundImageData;
-        final backgroundAssetPath = '${tempDir.path}/$backgroundAssetName';
+        final backgroundAssetPath = '${tempDir.path}/$backgroundImageAssetName';
+        File backFile = await File(backgroundAssetPath).create();
+        backFile.writeAsBytesSync(backgroundAssetAsList);
+      }
+
+      String? backgroundVideoAssetName;
+      if (backgroundVideoPath != null) {
+        File backgroundVideo = File(backgroundVideoPath);
+        Uint8List backgroundImageData = backgroundVideo.readAsBytesSync();
+        backgroundVideoAssetName = 'backgroundVideoAsset.mp4';
+        final Uint8List backgroundAssetAsList = backgroundImageData;
+        final backgroundAssetPath = '${tempDir.path}/$backgroundVideoAssetName';
         File backFile = await File(backgroundAssetPath).create();
         backFile.writeAsBytesSync(backgroundAssetAsList);
       }
 
       args = <String, dynamic>{
         "stickerImage": stickerAssetName,
-        "backgroundImage": backgroundAssetName,
+        "backgroundImage": backgroundImageAssetName,
+        "backgroundVideo": backgroundVideoAssetName,
         "backgroundTopColor": backgroundTopColor,
         "backgroundBottomColor": backgroundBottomColor
       };
@@ -79,40 +85,186 @@ class SocialShare {
     return response;
   }
 
+  static Future<String?> shareInstagramWall({
+    String? imagePath,
+    String? videoPath,
+  }) async {
+    Map<String, dynamic> args;
+    if(Platform.isIOS){
+      args = <String, dynamic>{
+        "image": imagePath,
+        "video": videoPath,
+      };
+    }else{
+
+      final tempDir = await getTemporaryDirectory();
+
+      String? imageAssetName;
+      if (imagePath != null) {
+        File backgroundImage = File(imagePath);
+        Uint8List backgroundImageData = backgroundImage.readAsBytesSync();
+        imageAssetName = 'imageAsset.png';
+        final Uint8List backgroundAssetAsList = backgroundImageData;
+        final backgroundAssetPath = '${tempDir.path}/$imageAssetName';
+        File backFile = await File(backgroundAssetPath).create();
+        backFile.writeAsBytesSync(backgroundAssetAsList);
+      }
+
+      String? videoAssetName;
+      if (videoPath != null) {
+        File backgroundVideo = File(videoPath);
+        Uint8List backgroundImageData = backgroundVideo.readAsBytesSync();
+        videoAssetName = 'videoAsset.mp4';
+        final Uint8List backgroundAssetAsList = backgroundImageData;
+        final backgroundAssetPath = '${tempDir.path}/$videoAssetName';
+        File backFile = await File(backgroundAssetPath).create();
+        backFile.writeAsBytesSync(backgroundAssetAsList);
+      }
+
+      args = <String, dynamic>{
+        "image": imageAssetName,
+        "video": videoAssetName,
+      };
+    }
+    final String? response = await _channel.invokeMethod(
+      'shareInstagramWall',
+      args,
+    );
+    return response;
+  }
+
   static Future<String?> shareFacebookStory(
-      String imagePath,
-      String backgroundTopColor,
-      String backgroundBottomColor,
-      String attributionURL,
-      {String? appId}) async {
+      {String? stickerPath,
+      String? backgroundImagePath,
+      String? backgroundVideoPath,
+      String? backgroundTopColor,
+      String? backgroundBottomColor,
+      required String appId}) async {
     Map<String, dynamic> args;
     if (Platform.isIOS) {
-      args = <String, dynamic>{
-        "stickerImage": imagePath,
-        "backgroundTopColor": backgroundTopColor,
-        "backgroundBottomColor": backgroundBottomColor,
-        "attributionURL": attributionURL,
-      };
+      if (backgroundImagePath != null) {
+        args = <String, dynamic>{
+          "backgroundImage": backgroundImagePath,
+          "stickerImage": stickerPath,
+          "FacebookAppID": appId
+        };
+      } else if (backgroundVideoPath != null) {
+        args = <String, dynamic>{
+          "stickerImage": stickerPath,
+          "backgroundVideo": backgroundVideoPath,
+          "FacebookAppID": appId
+        };
+      } else {
+        args = <String, dynamic>{
+          "stickerImage": stickerPath,
+          "backgroundTopColor": backgroundTopColor,
+          "backgroundBottomColor": backgroundBottomColor,
+          "FacebookAppID": appId
+        };
+      }
     } else {
-      File file = File(imagePath);
-      Uint8List bytes = file.readAsBytesSync();
-      var stickerdata = bytes.buffer.asUint8List();
       final tempDir = await getTemporaryDirectory();
-      String stickerAssetName = 'stickerAsset.png';
-      final Uint8List stickerAssetAsList = stickerdata;
-      final stickerAssetPath = '${tempDir.path}/$stickerAssetName';
-      file = await File(stickerAssetPath).create();
-      file.writeAsBytesSync(stickerAssetAsList);
+
+      String? stickerAssetName;
+      if (stickerPath != null) {
+        File file = File(stickerPath);
+        Uint8List bytes = file.readAsBytesSync();
+        var stickerData = bytes.buffer.asUint8List();
+        stickerAssetName = 'stickerAsset.png';
+        final Uint8List stickerAssetAsList = stickerData;
+        final stickerAssetPath = '${tempDir.path}/$stickerAssetName';
+        file = await File(stickerAssetPath).create();
+        file.writeAsBytesSync(stickerAssetAsList);
+      }
+
+      String? backgroundImageAssetName;
+      if (backgroundImagePath != null) {
+        File backgroundImage = File(backgroundImagePath);
+        Uint8List backgroundImageData = backgroundImage.readAsBytesSync();
+        backgroundImageAssetName = 'backgroundImageAsset.png';
+        final Uint8List backgroundAssetAsList = backgroundImageData;
+        final backgroundAssetPath = '${tempDir.path}/$backgroundImageAssetName';
+        File backFile = await File(backgroundAssetPath).create();
+        backFile.writeAsBytesSync(backgroundAssetAsList);
+      }
+
+      String? backgroundVideoAssetName;
+      if (backgroundVideoPath != null) {
+        File backgroundVideo = File(backgroundVideoPath);
+        Uint8List backgroundImageData = backgroundVideo.readAsBytesSync();
+        backgroundVideoAssetName = 'backgroundVideoAsset.mp4';
+        final Uint8List backgroundAssetAsList = backgroundImageData;
+        final backgroundAssetPath = '${tempDir.path}/$backgroundVideoAssetName';
+        File backFile = await File(backgroundAssetPath).create();
+        backFile.writeAsBytesSync(backgroundAssetAsList);
+      }
+
       args = <String, dynamic>{
         "stickerImage": stickerAssetName,
+        "backgroundImage": backgroundImageAssetName,
+        "backgroundVideo": backgroundVideoAssetName,
         "backgroundTopColor": backgroundTopColor,
         "backgroundBottomColor": backgroundBottomColor,
-        "attributionURL": attributionURL,
         "appId": appId
       };
     }
-    final String? response =
-    await _channel.invokeMethod('shareFacebookStory', args);
+    final String? response = await _channel.invokeMethod(
+      'shareFacebookStory',
+      args,
+    );
+    return response;
+  }
+
+  static Future<String?> shareFacebookWall(
+      {String? imagePath,
+        String? videoPath,
+        String? link,
+      String? hashtag}) async {
+    Map<String, dynamic> args;
+    if (Platform.isIOS) {
+
+      args = <String, dynamic>{
+        "image": imagePath ?? '',
+        "video": videoPath ?? '',
+        "hashtag": hashtag ?? '',
+        "link": link ?? '',
+      };
+    } else {
+      final tempDir = await getTemporaryDirectory();
+
+      String? imageAssetName;
+      if (imagePath != null) {
+        File backgroundImage = File(imagePath);
+        Uint8List backgroundImageData = backgroundImage.readAsBytesSync();
+        imageAssetName = 'imageAsset.png';
+        final Uint8List backgroundAssetAsList = backgroundImageData;
+        final backgroundAssetPath = '${tempDir.path}/$imageAssetName';
+        File backFile = await File(backgroundAssetPath).create();
+        backFile.writeAsBytesSync(backgroundAssetAsList);
+      }
+
+      String? videoAssetName;
+      if (videoPath != null) {
+        File backgroundVideo = File(videoPath);
+        Uint8List backgroundVideoData = backgroundVideo.readAsBytesSync();
+        videoAssetName = 'videoAsset.mp4';
+        final Uint8List backgroundAssetAsList = backgroundVideoData;
+        final backgroundAssetPath = '${tempDir.path}/$videoAssetName';
+        File backFile = await File(backgroundAssetPath).create();
+        backFile.writeAsBytesSync(backgroundAssetAsList);
+      }
+
+      args = <String, dynamic>{
+        "image": imageAssetName,
+        "video": videoAssetName,
+        "hashtag": hashtag,
+        "link": link,
+      };
+    }
+    final String? response = await _channel.invokeMethod(
+      'shareFacebookWall',
+      args,
+    );
     return response;
   }
 
